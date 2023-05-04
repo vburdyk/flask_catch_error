@@ -1,6 +1,6 @@
 from app import api, db
 from models import Article, MenuItem, Category
-from flask import request, Response
+from flask import request, Response, abort
 from flask_restful import Resource
 
 
@@ -14,7 +14,11 @@ class ArticleResource(Resource):
 
     def post(self):
         data = request.json
-        article = Article(title=data.get("title"), body=data.get("body"))
+        title = data.get("title")
+        body = data.get("body")
+        if not title or not body:
+            abort(404, description="Title or body is missed")
+        article = Article(title=title, body=body)
         db.session.add(article)
         db.session.commit()
         return article.serialize
@@ -28,14 +32,20 @@ class ArticleSingleResource(Resource):
     def put(self, id):
         data = request.json
         article = Article.query.get(id)
-        article.title = data.get("title")
-        article.body = data.get("body")
+        title = data.get("title")
+        body = data.get("body")
+        if (title or body) is None:
+            abort(404, description="Please, fill all fields")
+        article.title = title
+        article.body = body
         db.session.add(article)
         db.session.commit()
         return article.serialize
 
     def delete(self, id):
         article = Article.query.get(id)
+        if not article:
+            abort(404, "Article does not exist")
         db.session.delete(article)
         db.session.commit()
         return Response("", status=204)
@@ -51,7 +61,11 @@ class MenuItemResource(Resource):
 
     def post(self):
         data = request.json
-        menu_item = MenuItem(name=data.get("name"), link=data.get("link"))
+        name = data.get("name")
+        link = data.get("link")
+        menu_item = MenuItem(name=name, link=link)
+        if not name or not link:
+            abort(404, description="Name or link is missed")
         db.session.add(menu_item)
         db.session.commit()
         return menu_item.serialize

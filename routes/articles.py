@@ -1,5 +1,5 @@
 from app import app, db
-from flask import render_template, request, redirect, session
+from flask import render_template, request, redirect, session, abort
 from models import Article, Category
 
 
@@ -16,7 +16,12 @@ def article_create():
 def article_save():
     if session.get("user", {}).get("id", False):
         data = request.form
-        article = Article(title=data.get("title"), body=data.get("body"), user_id=int(session.get("user", {}).get("id")))
+        title = data.get("title")
+        body = data.get("body")
+        if not title or not body:
+            abort(404, description="Title or body is missed")
+
+        article = Article(title=title, body=body, user_id=int(session.get("user", {}).get("id")))
         db.session.add(article)
         for category_id in data.getlist("categories"):
             category = Category.query.get(int(category_id))
@@ -30,11 +35,12 @@ def article_save():
 def article_delete(id):
     if session.get("user", {}).get("id", False):
         article = Article.query.get(id)
+        if not article:
+            abort(404)
         if article.user_id == int(session.get("user", {}).get("id")):
             db.session.delete(article)
             db.session.commit()
     return redirect("/")
-
 
 
 @app.route("/category/create")
@@ -45,7 +51,11 @@ def category_create():
 @app.route("/category/save", methods=["POST"])
 def category_save():
     data = request.form
-    category = Category(name=data.get("name"), slug=data.get("slug"))
+    name = data.get("name")
+    slug = data.get("slug")
+    if not name or not slug:
+        abort(404, "Please fill name and slug")
+    category = Category(name=name, slug=slug)
     db.session.add(category)
     db.session.commit()
     return redirect("/")
@@ -54,4 +64,6 @@ def category_save():
 @app.route("/category/<string:slug>")
 def category_details(slug):
     category = Category.query.filter(Category.slug == slug).first()
+    if not category:
+        abort(404)
     return render_template("index.html", articles=category.articles)
