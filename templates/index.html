@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="cards">
+    {% for article in articles %}
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5 class="card-title">{{ article.title }}</h5>
+            <h6 class="card-subtitle mb-2 text-body-secondary">{{ article.created_at }}</h6>
+            <p class="card-text">{{ article.body }}</p>
+            {% if session.get("user", {}).get("id", False) and article.user_id == session["user"]["id"] %}
+                <a href="/article/{{ article.id }}/delete" class="card-link">Delete</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+{% endblock %}
